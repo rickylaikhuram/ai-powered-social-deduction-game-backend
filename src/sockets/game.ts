@@ -15,7 +15,7 @@ import type {
   CreateRoomPayload,
   JoinRoomPayload,
   CluePayload,
-} from "../types/game.js"; // Importing your types
+} from "../types/game.js"; 
 import { getGameWords } from "../services/wordService.js";
 import { getAIHint } from "../services/aiService.js";
 import { startSpeakerTimer, stopSpeakerTimer } from "../engine/timer.js";
