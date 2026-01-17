@@ -1,0 +1,109 @@
+{
+  "domains": [
+    {
+      "name": "Food & Cuisine",
+      "words": [
+        {
+          "word": "Pizza",
+          "similar": ["Pasta", "Burger", "Sandwich", "Taco", "Sushi"]
+        },
+        {
+          "word": "Coffee",
+          "similar": ["Tea", "Espresso", "Cappuccino", "Latte", "Mocha"]
+        },
+        {
+          "word": "Chocolate",
+          "similar": ["Candy", "Caramel", "Fudge", "Brownie", "Truffle"]
+        },
+        {
+          "word": "Salad",
+          "similar": ["Soup", "Appetizer", "Side dish", "Coleslaw", "Caesar"]
+        }
+      ]
+    },
+    {
+      "name": "Animals",
+      "words": [
+        {
+          "word": "Dog",
+          "similar": ["Cat", "Wolf", "Fox", "Puppy", "Husky"]
+        },
+        {
+          "word": "Elephant",
+          "similar": ["Rhino", "Hippo", "Giraffe", "Mammoth", "Buffalo"]
+        },
+        {
+          "word": "Eagle",
+          "similar": ["Hawk", "Falcon", "Owl", "Vulture", "Condor"]
+        },
+        {
+          "word": "Dolphin",
+          "similar": ["Whale", "Shark", "Seal", "Porpoise", "Orca"]
+        }
+      ]
+    },
+    {
+      "name": "Sports & Activities",
+      "words": [
+        {
+          "word": "Soccer",
+          "similar": ["Football", "Basketball", "Hockey", "Rugby", "Volleyball"]
+        },
+        {
+          "word": "Swimming",
+          "similar": ["Diving", "Surfing", "Kayaking", "Snorkeling", "Water polo"]
+        },
+        {
+          "word": "Tennis",
+          "similar": ["Badminton", "Squash", "Ping pong", "Racquetball", "Pickleball"]
+        },
+        {
+          "word": "Running",
+          "similar": ["Jogging", "Sprinting", "Marathon", "Track", "Cycling"]
+        }
+      ]
+    },
+    {
+      "name": "Entertainment",
+      "words": [
+        {
+          "word": "Movie",
+          "similar": ["Film", "Cinema", "Theater", "Show", "Documentary"]
+        },
+        {
+          "word": "Concert",
+          "similar": ["Festival", "Gig", "Performance", "Recital", "Show"]
+        },
+        {
+          "word": "Video game",
+          "similar": ["Board game", "Card game", "Mobile game", "Console", "PC game"]
+        },
+        {
+          "word": "Netflix",
+          "similar": ["Streaming", "TV show", "Series", "Binge-watch", "Episode"]
+        }
+      ]
+    },
+    {
+      "name": "Travel & Places",
+      "words": [
+        {
+          "word": "Beach",
+          "similar": ["Ocean", "Coast", "Shore", "Island", "Resort"]
+        },
+        {
+          "word": "Mountain",
+          "similar": ["Hill", "Peak", "Summit", "Valley", "Cliff"]
+        },
+        {
+          "word": "Hotel",
+          "similar": ["Motel", "Resort", "Hostel", "Inn", "Lodge"]
+        },
+        {
+          "word": "Airport",
+          "similar": ["Terminal", "Flight", "Airplane", "Runway", "Gate"]
+        }
+      ]
+    }
+  ]
+}
