@@ -245,24 +245,51 @@ const gameSlice = createSlice({
 
       allRoomCodes.forEach((roomCode) => {
         const room = state.rooms[roomCode];
-
-        // 1. Guard against undefined room
         if (!room) return;
 
-        // 2. Filter out the player
+        const playerToRemove = room.players.find(
+          (p) => p.socketId === action.payload.socketId,
+        );
+        if (!playerToRemove) return;
+
+        // Remove the player
         room.players = room.players.filter(
           (p) => p.socketId !== action.payload.socketId,
         );
+        // If game is already over or in lobby, just clean up
+        if (room.phase === "GAME_OVER" || room.phase === "LOBBY") {
+          if (room.players.length === 0) {
+            delete state.rooms[roomCode];
+          }
+          // Host Migration
+          if (room.players.length > 0 && !room.players.some((p) => p.isHost)) {
+            const newHost = room.players[0];
+            if (newHost) {
+              newHost.isHost = true;
+            }
+          }
+          return;
+        }
 
-        // 3. Host Migration (Safe version)
-        if (room.players.length > 0 && !room.players.some((p) => p.isHost)) {
-          const newHost = room.players[0]; // Capture the potential new host
-          if (newHost) {
-            newHost.isHost = true;
+        // Did an 'Alive' important player leave?
+        if (playerToRemove.isAlive) {
+          const remainingAlive = room.players.filter((p) => p.isAlive);
+          const shadowLeft =
+            playerToRemove.role === "SPY" ||
+            playerToRemove.role === "INFILTRATOR";
+
+          // If the spy leaves, Citizens win automatically
+          if (shadowLeft) {
+            room.winner = room.mode === "SPY" ? "AGENTS" : "CITIZENS";
+            room.phase = "GAME_OVER";
+          }
+          // If too few players left
+          else if (remainingAlive.length < 2) {
+            room.phase = "GAME_OVER";
           }
         }
 
-        // 4. Cleanup empty rooms
+        // If the last person leaves, delete the room
         if (room.players.length === 0) {
           delete state.rooms[roomCode];
         }

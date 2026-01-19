@@ -7,6 +7,7 @@ import {
   changePhase,
   createRoom,
   joinRoom,
+  removePlayer,
   restartSpeakingRound,
   startGame,
   submitVote,
@@ -15,7 +16,7 @@ import type {
   CreateRoomPayload,
   JoinRoomPayload,
   CluePayload,
-} from "../types/game.js"; 
+} from "../types/game.js";
 import { getGameWords } from "../services/wordService.js";
 import { getAIHint } from "../services/aiService.js";
 import { startSpeakerTimer, stopSpeakerTimer } from "../engine/timer.js";
@@ -67,7 +68,6 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
     );
 
     updateRoomState(io, roomCode);
-    io.to(roomCode).emit("PLAYER-JOINED", data.name);
   };
 
   // Handle Start Game
@@ -227,10 +227,66 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
     }
   };
 
+  // Handle Leeave Game
+  const handleLeave = (data: { roomCode: string }) => {
+    const roomCode = data.roomCode.toUpperCase();
+    const room = store.getState().game.rooms[roomCode];
+    if (!room) return;
+
+    const player = room.players.find((p) => p.socketId === socket.id);
+    if (!player) return;
+
+    // If they were ALIVE, we need to fix the game flow
+    if (player.isAlive && room.phase !== "LOBBY") {
+      const alivePlayers = room.players.filter((p) => p.isAlive);
+
+      // Check if they were the current speaker
+      const currentSpeaker =
+        alivePlayers[room.currentSpeakerIndex % alivePlayers.length];
+      if (room.phase === "SPEAKING" && currentSpeaker?.socketId === socket.id) {
+        stopSpeakerTimer(roomCode);
+        store.dispatch(changeCurrentSpeaker({ roomCode }));
+        // Only restart if enough players remain
+        if (alivePlayers.length > 3) startSpeakerTimer(io, roomCode);
+      }
+    }
+
+    // Remove from Redux (handles host migration & cleanup)
+    store.dispatch(removePlayer({ socketId: socket.id }));
+
+    // Post-removal checks
+    const updatedRoom = store.getState().game.rooms[roomCode];
+    if (updatedRoom && updatedRoom.phase !== "LOBBY") {
+      const remainingAlive = updatedRoom.players.filter((p) => p.isAlive);
+
+      // END GAME if too few players remain to continue
+      if (remainingAlive.length < 3) {
+        store.dispatch(changePhase({ roomCode, phase: "GAME_OVER" }));
+        io.to(roomCode).emit(
+          "SYSTEM_MESSAGE",
+          "Game ended: Not enough survivors to continue.",
+        );
+      }
+      // FIX VOTING if it's stuck
+      else if (updatedRoom.phase === "VOTING") {
+        const votesCast = updatedRoom.players.filter(
+          (p) => p.hasVoted && p.isAlive,
+        ).length;
+        if (votesCast >= remainingAlive.length) {
+          store.dispatch(calculateElimination({ roomCode }));
+        }
+      }
+    }
+
+    updateRoomState(io, roomCode);
+    socket.leave(roomCode);
+  };
+
   // Register Listeners
   socket.on("CREATE_ROOM", handleCreate);
   socket.on("JOIN_ROOM", handleJoin);
   socket.on("START_GAME", handleStartGame);
   socket.on("SEND_CLUE", handleSendClue);
   socket.on("SUBMIT_VOTE", handleVote);
+  socket.on("LEAVE_GAME", handleLeave);
 };

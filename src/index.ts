@@ -3,10 +3,7 @@ import { Server, Socket } from "socket.io";
 import cors from "cors";
 import { registerGameHandlers } from "./sockets/game.js";
 import { store } from "./store/index.js";
-import {
-  removePlayer,
-  changeCurrentSpeaker,
-} from "./store/gameSlice.js";
+import { removePlayer, changeCurrentSpeaker } from "./store/gameSlice.js";
 import { stopSpeakerTimer, startSpeakerTimer } from "./engine/timer.js";
 import { updateRoomState } from "./engine/broadcast.js";
 
@@ -36,38 +33,44 @@ io.on("connection", (socket: Socket) => {
     const state = store.getState().game.rooms;
 
     // Find the room the player was in
-    for (const roomCode in state) {
+    const roomCode = Object.keys(state).find((code) =>
+      state[code]?.players.some((p) => p.socketId === socket.id),
+    );
+
+    if (roomCode) {
       const room = state[roomCode];
       if (!room) return;
-      const playerIndex = room.players.findIndex(
-        (p) => p.socketId === socket.id,
-      );
+      const player = room.players.find((p) => p.socketId === socket.id);
 
-      if (playerIndex !== -1) {
-        const player = room.players[playerIndex];
-        if (!player) return;
-        console.log(`Signal Lost: ${player.name} from ${roomCode}`);
+      console.log(`Signal Lost: ${player?.name || "Unknown"} from ${roomCode}`);
 
-        // If it was their turn to speak, skip them before removing
+      // Handle Speaker Timer if they were currently talking
+      if (room.phase === "SPEAKING") {
         const alivePlayers = room.players.filter((p) => p.isAlive);
-        const currentSpeaker =
-          alivePlayers[room.currentSpeakerIndex % alivePlayers.length];
+        if (alivePlayers.length > 0) {
+          const currentSpeaker =
+            alivePlayers[room.currentSpeakerIndex % alivePlayers.length];
 
-        if (
-          room.phase === "SPEAKING" &&
-          currentSpeaker?.socketId === socket.id
-        ) {
-          stopSpeakerTimer(roomCode);
-          store.dispatch(changeCurrentSpeaker({ roomCode }));
-          startSpeakerTimer(io, roomCode);
+          if (currentSpeaker?.socketId === socket.id) {
+            stopSpeakerTimer(roomCode);
+            store.dispatch(changeCurrentSpeaker({ roomCode }));
+
+            if (alivePlayers.length > 3) {
+              startSpeakerTimer(io, roomCode);
+            }
+          }
         }
+      }
 
-        // Remove the player from state
-        store.dispatch(removePlayer({ socketId: socket.id }));
+      // Remove player
+      store.dispatch(removePlayer({ socketId: socket.id }));
 
-        // Final Sync
+      // Final Sync or Cleanup
+      const updatedRoom = store.getState().game.rooms[roomCode];
+      if (updatedRoom) {
         updateRoomState(io, roomCode);
-        break;
+      } else {
+        console.log(`Room ${roomCode} has been closed (all players left).`);
       }
     }
   });
